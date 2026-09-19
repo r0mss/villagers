@@ -1,5 +1,6 @@
 package com.r0mss.villagers.villager;
 
+import com.r0mss.villagers.Config;
 import com.r0mss.villagers.registry.ModProfessions;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Display;
@@ -77,6 +78,9 @@ public final class VillagerBehaviorHandler {
      * el Guardian de Tierras, para reforzar la sensacion de vigilancia).
      */
     private static void handleAmbientChatter(Villager villager, CompoundTag data, long time, boolean isGuardian) {
+        if (!Config.VILLAGERS_CAN_SPEAK.get()) {
+            return;
+        }
         long nextChatter = data.getLong(TAG_NEXT_CHATTER);
         if (nextChatter == 0L) {
             // Primera vez que vemos a este aldeano: programar su primera frase
