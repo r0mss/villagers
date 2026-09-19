@@ -1,6 +1,6 @@
 package com.r0mss.villagers.villager;
 
-import com.r0mss.villagers.Config;
+import com.r0mss.villagers.VillagersMod;
 import com.r0mss.villagers.registry.ModProfessions;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Display;
@@ -14,11 +14,15 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 /**
  * Escucha el tick de cada entidad para:
  * <p>
- * 1) Hacer que los aldeanos hablen de vez en cuando (frase ambiental aleatoria).
- * 2) Mantener "estaticos" (sin caminar) a los aldeanos con las profesiones
+ * 1) Mantener "estaticos" (sin caminar) a los aldeanos con las profesiones
  *    Guardian de Tierras y Pregonero, mientras esten empleados.
- * 3) Hacer que el Pregonero grite noticias predeterminadas cada cierto tiempo.
- * 4) Limpiar las burbujas de texto flotante cuando expira su tiempo de vida.
+ * 2) Hacer que el Pregonero grite noticias predeterminadas cada cierto tiempo
+ *    (por ahora, el unico trabajo que "habla").
+ * 3) Limpiar las burbujas de texto flotante cuando expira su tiempo de vida.
+ * <p>
+ * El habla ambiental generica de cualquier aldeano esta desactivada por ahora
+ * (ver {@link VillagerLines#randomChatter} y {@link #handleAmbientChatter},
+ * que quedan sin usar pero listos por si se reactiva en el futuro).
  * <p>
  * Nota de rendimiento: esto corre en el tick de CADA entidad del mundo, pero
  * el trabajo real solo se hace para instancias de Villager o de nuestras
@@ -28,8 +32,10 @@ public final class VillagerBehaviorHandler {
 
     private static final String TAG_NEXT_CHATTER = "villagers_next_chatter";
     private static final String TAG_NEXT_SHOUT = "villagers_next_shout";
+    private static final String TAG_JOB_LOGGED = "villagers_job_logged";
 
     // Rango de ticks entre frases ambientales de un aldeano cualquiera (20 ticks = 1 segundo)
+    // (sin usar mientras el habla ambiental este desactivada, ver arriba)
     private static final int CHATTER_MIN_TICKS = 20 * 60 * 2;   // 2 minutos
     private static final int CHATTER_MAX_TICKS = 20 * 60 * 6;   // 6 minutos
 
@@ -59,14 +65,15 @@ public final class VillagerBehaviorHandler {
         boolean isGuardian = profession == ModProfessions.LAND_GUARDIAN.get();
         boolean isCrier = profession == ModProfessions.TOWN_CRIER.get();
 
-        if (isGuardian || isCrier) {
-            keepStatic(villager);
-        }
-
         CompoundTag data = villager.getPersistentData();
         long time = villager.level().getGameTime();
 
-        handleAmbientChatter(villager, data, time, isGuardian);
+        if (isGuardian || isCrier) {
+            keepStatic(villager);
+            logJobAcquiredOnce(villager, data, isGuardian ? "land_guardian" : "town_crier");
+        }
+
+        // Habla ambiental generica desactivada por ahora (solo el Pregonero "habla", ver abajo)
 
         if (isCrier) {
             handleTownCrierShout(villager, data, time);
@@ -74,13 +81,12 @@ public final class VillagerBehaviorHandler {
     }
 
     /**
-     * Frase ambiental aleatoria para cualquier aldeano (mas frecuente si es
-     * el Guardian de Tierras, para reforzar la sensacion de vigilancia).
+     * Frase ambiental aleatoria para cualquier aldeano. DESACTIVADA por ahora:
+     * este metodo no se llama desde {@link #handleVillager}. Se deja lista
+     * para reactivarla facilmente en el futuro.
      */
+    @SuppressWarnings("unused")
     private static void handleAmbientChatter(Villager villager, CompoundTag data, long time, boolean isGuardian) {
-        if (!Config.VILLAGERS_CAN_SPEAK.get()) {
-            return;
-        }
         long nextChatter = data.getLong(TAG_NEXT_CHATTER);
         if (nextChatter == 0L) {
             // Primera vez que vemos a este aldeano: programar su primera frase
@@ -106,6 +112,21 @@ public final class VillagerBehaviorHandler {
             SpeechBubbles.shout(villager, VillagerLines.randomNews());
             data.putLong(TAG_NEXT_SHOUT, time + randomBetween(villager, SHOUT_MIN_TICKS, SHOUT_MAX_TICKS));
         }
+    }
+
+    /**
+     * Escribe una linea en el log del servidor la primera vez que vemos a
+     * este aldeano con una de nuestras profesiones, para poder confirmar
+     * (mirando latest.log) si el sistema de trabajos vanilla efectivamente
+     * se lo esta asignando.
+     */
+    private static void logJobAcquiredOnce(Villager villager, CompoundTag data, String professionId) {
+        if (data.getBoolean(TAG_JOB_LOGGED)) {
+            return;
+        }
+        data.putBoolean(TAG_JOB_LOGGED, true);
+        VillagersMod.LOGGER.info("[villagers] Aldeano {} tomo el trabajo '{}' en {}",
+                villager.getUUID(), professionId, villager.blockPosition());
     }
 
     /**
@@ -136,3 +157,4 @@ public final class VillagerBehaviorHandler {
         return min + villager.getRandom().nextInt(max - min + 1);
     }
 }
+
