@@ -1,0 +1,12 @@
+{
+  "itemGroup.villagers": "Aldeanos Inmersivos",
+
+  "block.villagers.guard_post": "Puesto de Guardia",
+  "block.villagers.town_crier_podium": "Podio del Pregonero",
+
+  "item.villagers.guard_post": "Puesto de Guardia",
+  "item.villagers.town_crier_podium": "Podio del Pregonero",
+
+  "entity.minecraft.villager.land_guardian": "Guardian de Tierras",
+  "entity.minecraft.villager.town_crier": "Pregonero"
+}

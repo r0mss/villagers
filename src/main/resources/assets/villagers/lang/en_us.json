@@ -1,0 +1,12 @@
+{
+  "itemGroup.villagers": "Immersive Villagers",
+
+  "block.villagers.guard_post": "Guard Post",
+  "block.villagers.town_crier_podium": "Town Crier Podium",
+
+  "item.villagers.guard_post": "Guard Post",
+  "item.villagers.town_crier_podium": "Town Crier Podium",
+
+  "entity.minecraft.villager.land_guardian": "Land Guardian",
+  "entity.minecraft.villager.town_crier": "Town Crier"
+}

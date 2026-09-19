@@ -1,0 +1,35 @@
+package com.r0mss.villagers.registry;
+
+import com.r0mss.villagers.VillagersMod;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.MapColor;
+import net.neoforged.neoforge.registries.DeferredBlock;
+import net.neoforged.neoforge.registries.DeferredRegister;
+
+/**
+ * Bloques de trabajo (job site) para las nuevas profesiones de aldeano.
+ */
+public class ModBlocks {
+
+    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(VillagersMod.MODID);
+
+    // Bloque de trabajo del Guardian de Tierras: un poste de guardia
+    public static final DeferredBlock<Block> GUARD_POST = BLOCKS.registerSimpleBlock(
+            "guard_post",
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.STONE)
+                    .strength(2.0f, 6.0f)
+                    .requiresCorrectToolForDrops()
+                    .sound(net.minecraft.world.level.block.SoundType.STONE)
+    );
+
+    // Bloque de trabajo del Pregonero: un podio para anunciar noticias
+    public static final DeferredBlock<Block> TOWN_CRIER_PODIUM = BLOCKS.registerSimpleBlock(
+            "town_crier_podium",
+            BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WOOD)
+                    .strength(2.0f, 3.0f)
+                    .sound(net.minecraft.world.level.block.SoundType.WOOD)
+    );
+}
