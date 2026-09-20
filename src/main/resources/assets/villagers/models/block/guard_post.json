@@ -1,8 +1,22 @@
 {
-  "parent": "minecraft:block/cube_bottom_top",
+  "parent": "minecraft:block/block",
   "textures": {
-    "top": "villagers:block/guard_post_top",
-    "bottom": "villagers:block/guard_post_bottom",
-    "side": "villagers:block/guard_post_side"
-  }
+    "front": "villagers:block/guard_post_top",
+    "side": "villagers:block/guard_post_side",
+    "particle": "villagers:block/guard_post_side"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 14],
+      "to": [16, 16, 16],
+      "faces": {
+        "north": { "texture": "#front" },
+        "south": { "texture": "#side" },
+        "east":  { "texture": "#side" },
+        "west":  { "texture": "#side" },
+        "up":    { "texture": "#side" },
+        "down":  { "texture": "#side" }
+      }
+    }
+  ]
 }

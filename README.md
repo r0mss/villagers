@@ -4,9 +4,11 @@ Mod para **NeoForge 1.21.1** que hace a los aldeanos mas inmersivos.
 
 ## Funcionalidades actuales
 
-- **Guardian de Tierras**: nuevo trabajo. El aldeano se queda estatico junto a
-  su bloque de trabajo (`guard_post`, un puesto de guardia) vigilando la zona.
-  Ideal para puertas o calles del pueblo.
+- **Guardian de Tierras**: nuevo trabajo. Su puesto (`guard_post`) es una
+  placa de pared (no un bloque completo), asi que se puede colocar junto a
+  una puerta sin estorbar el paso. El aldeano se para quieto y su cuerpo
+  queda fijo mirando hacia donde apunta la placa; la cabeza sigue libre para
+  mirar alrededor.
 - **Pregonero**: nuevo trabajo. El aldeano se queda estatico junto a su podio
   (`town_crier_podium`) y grita noticias aleatorias predeterminadas cada
   20-45 segundos: texto flotante sobre su cabeza + mensaje en el chat de los
@@ -14,8 +16,9 @@ Mod para **NeoForge 1.21.1** que hace a los aldeanos mas inmersivos.
 
 ## Como darle trabajo a un aldeano
 
-1. Coloca el bloque `guard_post` o `town_crier_podium` (estan en la pestaña de
-   creativo "Aldeanos Inmersivos", o en la pestaña de bloques de construccion).
+1. Coloca el bloque `guard_post` en una pared (clic derecho en la cara de un
+   bloque solido) o el `town_crier_podium` en el piso — estan en la pestaña
+   de creativo "Aldeanos Inmersivos", o en la pestaña de bloques de construccion.
 2. Espera a que un aldeano desempleado camine cerca y lo reclame, igual que
    pasaria con un atril o una mesa de cartografo vanilla.
 3. Una vez empleado, el aldeano se quedara fijo en su puesto.
@@ -41,15 +44,17 @@ El jar queda en `build/libs/`.
 ```
 src/main/java/com/r0mss/villagers/
 ├── VillagersMod.java              # Clase principal
+├── block/
+│   └── GuardPostBlock.java         # Bloque de pared del Guardian (con FACING)
 ├── registry/
-│   ├── ModBlocks.java              # Bloques de trabajo
-│   ├── ModItems.java               # Items (block items)
-│   ├── ModPoiTypes.java            # Puntos de interes (job sites)
-│   └── ModProfessions.java         # Profesiones nuevas
+│   ├── ModBlocks.java               # Bloques de trabajo
+│   ├── ModItems.java                # Items (block items)
+│   ├── ModPoiTypes.java             # Puntos de interes (job sites)
+│   └── ModProfessions.java          # Profesiones nuevas
 └── villager/
-    ├── VillagerLines.java          # Noticias predeterminadas del pregonero
-    ├── SpeechBubbles.java          # Texto flotante + chat + sonido
-    └── VillagerBehaviorHandler.java # Logica: estatico + grito del pregonero
+    ├── VillagerLines.java           # Noticias predeterminadas del pregonero
+    ├── SpeechBubbles.java           # Texto flotante + chat + sonido
+    └── VillagerBehaviorHandler.java # Logica: estatico, orientacion fija, grito
 ```
 
 Ademas, `src/main/resources/data/minecraft/tags/point_of_interest_type/acquirable_job_site.json`

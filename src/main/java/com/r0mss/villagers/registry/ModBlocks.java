@@ -1,6 +1,7 @@
 package com.r0mss.villagers.registry;
 
 import com.r0mss.villagers.VillagersMod;
+import com.r0mss.villagers.block.GuardPostBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
@@ -14,14 +15,16 @@ public class ModBlocks {
 
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(VillagersMod.MODID);
 
-    // Bloque de trabajo del Guardian de Tierras: un poste de guardia
-    public static final DeferredBlock<Block> GUARD_POST = BLOCKS.registerSimpleBlock(
+    // Bloque de trabajo del Guardian de Tierras: una placa de pared (no un bloque completo),
+    // para poder colocarla junto a una puerta sin estorbar el paso.
+    public static final DeferredBlock<GuardPostBlock> GUARD_POST = BLOCKS.register(
             "guard_post",
-            BlockBehaviour.Properties.of()
+            () -> new GuardPostBlock(BlockBehaviour.Properties.of()
                     .mapColor(MapColor.STONE)
                     .strength(2.0f, 6.0f)
                     .requiresCorrectToolForDrops()
                     .sound(net.minecraft.world.level.block.SoundType.STONE)
+                    .noOcclusion())
     );
 
     // Bloque de trabajo del Pregonero: un podio para anunciar noticias
