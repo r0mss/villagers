@@ -9,27 +9,31 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
-import java.util.Optional;
+import java.util.List;
 
 /**
  * Escucha el tick de cada entidad para:
  * <p>
- * 1) Mantener "estaticos" (sin caminar) a los aldeanos con las profesiones
- *    Guardian de Tierras y Pregonero, mientras esten empleados.
- * 2) Hacer que el Guardian de Tierras mantenga el cuerpo fijo mirando hacia
- *    donde apunta la placa de su puesto (guard_post), mientras la cabeza
- *    puede seguir moviendose libre.
- * 3) Hacer que el Pregonero grite noticias predeterminadas cada cierto tiempo
- *    (texto flotante + chat + sonido).
- * 4) Limpiar las burbujas de texto flotante cuando expira su tiempo de vida.
+ * 1) Mantener a los aldeanos con nuestras profesiones cerca de su puesto
+ *    (radio de {@value #LEASH_RADIUS} bloques): dentro del radio quedan
+ *    fijos, si se alejan mas caminan de vuelta normalmente (sin teletransporte).
+ * 2) Guardian de Tierras: cuerpo fijo mirando hacia su placa, nunca duerme,
+ *    no entra en panico, y ataca cuerpo a cuerpo a mobs hostiles que se
+ *    acerquen demasiado.
+ * 3) Pregonero: grita noticias predeterminadas cada cierto tiempo (texto
+ *    flotante + chat + sonido).
+ * 4) Limpia las burbujas de texto flotante cuando expira su tiempo de vida.
  * <p>
  * Nota de rendimiento: esto corre en el tick de CADA entidad del mundo, pero
  * el trabajo real solo se hace para instancias de Villager o de nuestras
@@ -40,10 +44,20 @@ public final class VillagerBehaviorHandler {
     private static final String TAG_NEXT_SHOUT = "villagers_next_shout";
     private static final String TAG_JOB_LOGGED = "villagers_job_logged";
     private static final String TAG_FACING_YAW = "villagers_facing_yaw";
+    private static final String TAG_NEXT_ATTACK = "villagers_next_attack";
 
     // Rango de ticks entre gritos del pregonero
     private static final int SHOUT_MIN_TICKS = 20 * 20;   // 20 segundos
     private static final int SHOUT_MAX_TICKS = 20 * 45;   // 45 segundos
+
+    // Que tan lejos de su puesto puede alejarse antes de que lo hagamos volver caminando
+    private static final double LEASH_RADIUS = 4.0;
+    private static final double LEASH_RADIUS_SQ = LEASH_RADIUS * LEASH_RADIUS;
+
+    // Combate del Guardian
+    private static final double ATTACK_RANGE = 2.5;
+    private static final float ATTACK_DAMAGE = 7.0f; // ~3.5 corazones
+    private static final int ATTACK_COOLDOWN_TICKS = 20; // 1 segundo
 
     private VillagerBehaviorHandler() {
     }
@@ -72,10 +86,26 @@ public final class VillagerBehaviorHandler {
         }
 
         CompoundTag data = villager.getPersistentData();
-        Float fixedBodyYaw = isGuardian ? resolveFacingYaw(villager, data) : null;
-
-        keepStatic(villager, fixedBodyYaw);
         logJobAcquiredOnce(villager, data, isGuardian ? "land_guardian" : "town_crier");
+
+        BlockPos jobSitePos = villager.getBrain().getMemory(MemoryModuleType.JOB_SITE)
+                .map(GlobalPos::pos)
+                .orElse(null);
+
+        boolean withinPost = jobSitePos == null
+                || villager.position().distanceToSqr(Vec3.atCenterOf(jobSitePos)) <= LEASH_RADIUS_SQ;
+
+        if (withinPost) {
+            Float fixedBodyYaw = isGuardian ? resolveFacingYaw(villager, data, jobSitePos) : null;
+            keepStatic(villager, fixedBodyYaw);
+        } else {
+            walkBackToPost(villager, jobSitePos);
+        }
+
+        if (isGuardian) {
+            suppressGuardianInstincts(villager);
+            handleGuardianAttack(villager, data);
+        }
 
         if (isCrier) {
             handleTownCrierShout(villager, data, villager.level().getGameTime());
@@ -98,20 +128,62 @@ public final class VillagerBehaviorHandler {
     }
 
     /**
+     * Quita al Guardian los instintos que no encajan con "estar de guardia":
+     * nunca duerme (si se llega a quedar dormido, lo despertamos al toque) y
+     * nunca entra en panico (borramos la memoria de "me golpearon" que
+     * dispara la huida, asi se queda firme y puede contraatacar).
+     */
+    private static void suppressGuardianInstincts(Villager villager) {
+        if (villager.isSleeping()) {
+            villager.stopSleeping();
+        }
+        villager.getBrain().eraseMemory(MemoryModuleType.HOME);
+        villager.getBrain().eraseMemory(MemoryModuleType.HURT_BY);
+        villager.getBrain().eraseMemory(MemoryModuleType.HURT_BY_ENTITY);
+    }
+
+    /**
+     * El Guardian ataca cuerpo a cuerpo a cualquier mob hostil que se acerque
+     * demasiado, sin moverse de su puesto ni perseguir.
+     */
+    private static void handleGuardianAttack(Villager villager, CompoundTag data) {
+        long time = villager.level().getGameTime();
+        if (time < data.getLong(TAG_NEXT_ATTACK)) {
+            return;
+        }
+
+        AABB searchArea = villager.getBoundingBox().inflate(ATTACK_RANGE);
+        List<LivingEntity> nearbyEnemies = villager.level().getEntitiesOfClass(
+                LivingEntity.class, searchArea,
+                entity -> entity instanceof Enemy && entity.isAlive()
+        );
+
+        LivingEntity target = nearbyEnemies.stream()
+                .min((a, b) -> Double.compare(a.distanceToSqr(villager), b.distanceToSqr(villager)))
+                .orElse(null);
+
+        if (target == null || villager.distanceToSqr(target) > ATTACK_RANGE * ATTACK_RANGE) {
+            return;
+        }
+
+        target.hurt(villager.damageSources().mobAttack(villager), ATTACK_DAMAGE);
+        villager.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+        data.putLong(TAG_NEXT_ATTACK, time + ATTACK_COOLDOWN_TICKS);
+    }
+
+    /**
      * Calcula (una sola vez, y la guarda en datos persistentes) hacia donde
      * debe mirar el cuerpo del Guardian: la misma direccion hacia la que
      * apunta la placa de guard_post en su puesto de trabajo.
      */
-    private static Float resolveFacingYaw(Villager villager, CompoundTag data) {
+    private static Float resolveFacingYaw(Villager villager, CompoundTag data, BlockPos jobSitePos) {
         if (data.contains(TAG_FACING_YAW)) {
             return data.getFloat(TAG_FACING_YAW);
         }
 
         float yaw = villager.getYRot();
-        Optional<GlobalPos> jobSite = villager.getBrain().getMemory(MemoryModuleType.JOB_SITE);
-        if (jobSite.isPresent()) {
-            BlockPos pos = jobSite.get().pos();
-            BlockState state = villager.level().getBlockState(pos);
+        if (jobSitePos != null) {
+            BlockState state = villager.level().getBlockState(jobSitePos);
             if (state.getBlock() instanceof GuardPostBlock) {
                 Direction facing = state.getValue(GuardPostBlock.FACING);
                 yaw = facing.toYRot();
@@ -166,6 +238,21 @@ public final class VillagerBehaviorHandler {
                     villager.getX() + dx,
                     villager.getEyeY(),
                     villager.getZ() + dz
+            );
+        }
+    }
+
+    /**
+     * Se paso del radio permitido: lo dejamos caminar normalmente de vuelta
+     * a su puesto (sin teletransporte), en vez de congelarlo.
+     */
+    private static void walkBackToPost(Villager villager, BlockPos jobSitePos) {
+        if (villager.getNavigation().isDone()) {
+            villager.getNavigation().moveTo(
+                    jobSitePos.getX() + 0.5,
+                    jobSitePos.getY(),
+                    jobSitePos.getZ() + 0.5,
+                    0.5
             );
         }
     }

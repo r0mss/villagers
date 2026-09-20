@@ -2,7 +2,6 @@ package com.r0mss.villagers.villager;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -74,9 +73,9 @@ public final class SpeechBubbles {
     }
 
     private static void broadcastToNearbyChat(ServerLevel serverLevel, LivingEntity speaker, String message) {
-        MutableComponent chatMessage = Component.literal("[Pregonero] ")
-                .withStyle(style -> style.withColor(0xFFD700).withBold(true))
-                .append(Component.literal(message).withStyle(style -> style.withColor(0xFFD700).withBold(false)));
+        // Formato identico al de un mensaje de jugador normal: "<Nombre> mensaje",
+        // sin color ni negrita especial, para que no se vea como un mensaje de sistema.
+        Component chatMessage = Component.literal("<Pregonero> " + message);
 
         double rangeSq = CHAT_RANGE * CHAT_RANGE;
         for (ServerPlayer player : serverLevel.players()) {

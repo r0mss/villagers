@@ -4,6 +4,7 @@ import com.r0mss.villagers.registry.ModBlocks;
 import com.r0mss.villagers.registry.ModItems;
 import com.r0mss.villagers.registry.ModPoiTypes;
 import com.r0mss.villagers.registry.ModProfessions;
+import com.r0mss.villagers.villager.GuardianFeedingHandler;
 import com.r0mss.villagers.villager.VillagerBehaviorHandler;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -60,6 +61,7 @@ public class VillagersMod {
 
         // Registrar el manejador de comportamiento de aldeanos (trabajos estaticos + pregonero)
         NeoForge.EVENT_BUS.register(VillagerBehaviorHandler.class);
+        NeoForge.EVENT_BUS.register(GuardianFeedingHandler.class);
 
         LOGGER.info("Aldeanos Inmersivos cargado correctamente.");
     }
