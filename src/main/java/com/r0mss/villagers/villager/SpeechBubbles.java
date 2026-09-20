@@ -1,7 +1,10 @@
 package com.r0mss.villagers.villager;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Display;
@@ -10,8 +13,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 
 /**
- * Muestra un texto flotante (usando una entidad text_display vanilla) encima
- * de un aldeano durante unos segundos, simulando que "habla".
+ * Muestra un anuncio del Pregonero: un texto flotante encima de su cabeza
+ * (entidad text_display vanilla) y el mismo mensaje en el chat de los
+ * jugadores cercanos.
  * <p>
  * No usamos ningun paquete de red propio ni mixins: la entidad text_display
  * es completamente vanilla, y sus propiedades (billboard, color de fondo,
@@ -21,27 +25,26 @@ import net.minecraft.world.level.Level;
 public final class SpeechBubbles {
 
     private static final String TAG_EXPIRE_TICK = "villagers_bubble_expire";
-
-    private static final int NORMAL_LIFESPAN_TICKS = 70;   // ~3.5s
-    private static final int SHOUT_LIFESPAN_TICKS = 110;   // ~5.5s
+    private static final int LIFESPAN_TICKS = 110; // ~5.5s
+    private static final double CHAT_RANGE = 48.0;
 
     private SpeechBubbles() {
     }
 
-    public static void say(LivingEntity speaker, String message) {
-        say(speaker, message, false);
-    }
-
-    public static void shout(LivingEntity speaker, String message) {
-        say(speaker, message, true);
-    }
-
-    private static void say(LivingEntity speaker, String message, boolean shout) {
+    public static void announce(LivingEntity speaker, String message) {
         Level level = speaker.level();
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
 
+        spawnFloatingText(serverLevel, speaker, message);
+        broadcastToNearbyChat(serverLevel, speaker, message);
+
+        serverLevel.playSound(null, speaker.blockPosition(), SoundEvents.VILLAGER_YES,
+                SoundSource.NEUTRAL, 1.0f, 0.8f);
+    }
+
+    private static void spawnFloatingText(ServerLevel serverLevel, LivingEntity speaker, String message) {
         Display.TextDisplay display = new Display.TextDisplay(EntityType.TEXT_DISPLAY, serverLevel);
         display.moveTo(speaker.getX(), speaker.getEyeY() + 0.55, speaker.getZ(), 0.0F, 0.0F);
 
@@ -53,7 +56,7 @@ public final class SpeechBubbles {
         // Propiedades propias de la entidad "display" (no tienen setter publico,
         // se aplican mediante NBT publico, igual que /summon)
         CompoundTag tag = new CompoundTag();
-        tag.putString("text", toJsonText(message, shout));
+        tag.putString("text", toJsonText(message));
         tag.putString("billboard", "center");
         tag.putFloat("view_range", 16.0f);
         tag.putFloat("shadow_radius", 0.0f);
@@ -67,16 +70,19 @@ public final class SpeechBubbles {
         display.load(tag);
 
         serverLevel.addFreshEntity(display);
+        display.getPersistentData().putLong(TAG_EXPIRE_TICK, serverLevel.getGameTime() + LIFESPAN_TICKS);
+    }
 
-        int lifespan = shout ? SHOUT_LIFESPAN_TICKS : NORMAL_LIFESPAN_TICKS;
-        display.getPersistentData().putLong(TAG_EXPIRE_TICK, serverLevel.getGameTime() + lifespan);
+    private static void broadcastToNearbyChat(ServerLevel serverLevel, LivingEntity speaker, String message) {
+        MutableComponent chatMessage = Component.literal("[Pregonero] ")
+                .withStyle(style -> style.withColor(0xFFD700).withBold(true))
+                .append(Component.literal(message).withStyle(style -> style.withColor(0xFFD700).withBold(false)));
 
-        if (shout) {
-            serverLevel.playSound(null, speaker.blockPosition(), SoundEvents.VILLAGER_YES,
-                    SoundSource.NEUTRAL, 1.0f, 0.8f);
-        } else {
-            serverLevel.playSound(null, speaker.blockPosition(), SoundEvents.VILLAGER_AMBIENT,
-                    SoundSource.NEUTRAL, 0.5f, 1.1f);
+        double rangeSq = CHAT_RANGE * CHAT_RANGE;
+        for (ServerPlayer player : serverLevel.players()) {
+            if (player.distanceToSqr(speaker) <= rangeSq) {
+                player.sendSystemMessage(chatMessage);
+            }
         }
     }
 
@@ -95,17 +101,10 @@ public final class SpeechBubbles {
         }
     }
 
-    private static String toJsonText(String message, boolean shout) {
+    private static String toJsonText(String message) {
         String escaped = message
                 .replace("\\", "\\\\")
                 .replace("\"", "\\\"");
-        String color = shout ? "gold" : "white";
-        StringBuilder json = new StringBuilder();
-        json.append("{\"text\":\"").append(escaped).append("\",\"color\":\"").append(color).append("\"");
-        if (shout) {
-            json.append(",\"bold\":true");
-        }
-        json.append("}");
-        return json.toString();
+        return "{\"text\":\"" + escaped + "\",\"color\":\"gold\",\"bold\":true}";
     }
 }

@@ -17,12 +17,8 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
  * 1) Mantener "estaticos" (sin caminar) a los aldeanos con las profesiones
  *    Guardian de Tierras y Pregonero, mientras esten empleados.
  * 2) Hacer que el Pregonero grite noticias predeterminadas cada cierto tiempo
- *    (por ahora, el unico trabajo que "habla").
+ *    (texto flotante + chat + sonido).
  * 3) Limpiar las burbujas de texto flotante cuando expira su tiempo de vida.
- * <p>
- * El habla ambiental generica de cualquier aldeano esta desactivada por ahora
- * (ver {@link VillagerLines#randomChatter} y {@link #handleAmbientChatter},
- * que quedan sin usar pero listos por si se reactiva en el futuro).
  * <p>
  * Nota de rendimiento: esto corre en el tick de CADA entidad del mundo, pero
  * el trabajo real solo se hace para instancias de Villager o de nuestras
@@ -30,14 +26,8 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
  */
 public final class VillagerBehaviorHandler {
 
-    private static final String TAG_NEXT_CHATTER = "villagers_next_chatter";
     private static final String TAG_NEXT_SHOUT = "villagers_next_shout";
     private static final String TAG_JOB_LOGGED = "villagers_job_logged";
-
-    // Rango de ticks entre frases ambientales de un aldeano cualquiera (20 ticks = 1 segundo)
-    // (sin usar mientras el habla ambiental este desactivada, ver arriba)
-    private static final int CHATTER_MIN_TICKS = 20 * 60 * 2;   // 2 minutos
-    private static final int CHATTER_MAX_TICKS = 20 * 60 * 6;   // 6 minutos
 
     // Rango de ticks entre gritos del pregonero
     private static final int SHOUT_MIN_TICKS = 20 * 20;   // 20 segundos
@@ -65,37 +55,16 @@ public final class VillagerBehaviorHandler {
         boolean isGuardian = profession == ModProfessions.LAND_GUARDIAN.get();
         boolean isCrier = profession == ModProfessions.TOWN_CRIER.get();
 
-        CompoundTag data = villager.getPersistentData();
-        long time = villager.level().getGameTime();
-
-        if (isGuardian || isCrier) {
-            keepStatic(villager);
-            logJobAcquiredOnce(villager, data, isGuardian ? "land_guardian" : "town_crier");
-        }
-
-        // Habla ambiental generica desactivada por ahora (solo el Pregonero "habla", ver abajo)
-
-        if (isCrier) {
-            handleTownCrierShout(villager, data, time);
-        }
-    }
-
-    /**
-     * Frase ambiental aleatoria para cualquier aldeano. DESACTIVADA por ahora:
-     * este metodo no se llama desde {@link #handleVillager}. Se deja lista
-     * para reactivarla facilmente en el futuro.
-     */
-    @SuppressWarnings("unused")
-    private static void handleAmbientChatter(Villager villager, CompoundTag data, long time, boolean isGuardian) {
-        long nextChatter = data.getLong(TAG_NEXT_CHATTER);
-        if (nextChatter == 0L) {
-            // Primera vez que vemos a este aldeano: programar su primera frase
-            data.putLong(TAG_NEXT_CHATTER, time + randomBetween(villager, CHATTER_MIN_TICKS, CHATTER_MAX_TICKS));
+        if (!isGuardian && !isCrier) {
             return;
         }
-        if (time >= nextChatter) {
-            SpeechBubbles.say(villager, VillagerLines.randomChatter(isGuardian));
-            data.putLong(TAG_NEXT_CHATTER, time + randomBetween(villager, CHATTER_MIN_TICKS, CHATTER_MAX_TICKS));
+
+        CompoundTag data = villager.getPersistentData();
+        keepStatic(villager);
+        logJobAcquiredOnce(villager, data, isGuardian ? "land_guardian" : "town_crier");
+
+        if (isCrier) {
+            handleTownCrierShout(villager, data, villager.level().getGameTime());
         }
     }
 
@@ -109,7 +78,7 @@ public final class VillagerBehaviorHandler {
             return;
         }
         if (time >= nextShout) {
-            SpeechBubbles.shout(villager, VillagerLines.randomNews());
+            SpeechBubbles.announce(villager, VillagerLines.randomNews());
             data.putLong(TAG_NEXT_SHOUT, time + randomBetween(villager, SHOUT_MIN_TICKS, SHOUT_MAX_TICKS));
         }
     }
@@ -157,4 +126,3 @@ public final class VillagerBehaviorHandler {
         return min + villager.getRandom().nextInt(max - min + 1);
     }
 }
-

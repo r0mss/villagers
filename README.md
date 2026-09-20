@@ -4,14 +4,13 @@ Mod para **NeoForge 1.21.1** que hace a los aldeanos mas inmersivos.
 
 ## Funcionalidades actuales
 
-- **Habla ambiental**: cualquier aldeano puede soltar una frase aleatoria de vez
-  en cuando (aparece como texto flotante sobre su cabeza).
 - **Guardian de Tierras**: nuevo trabajo. El aldeano se queda estatico junto a
   su bloque de trabajo (`guard_post`, un puesto de guardia) vigilando la zona.
   Ideal para puertas o calles del pueblo.
 - **Pregonero**: nuevo trabajo. El aldeano se queda estatico junto a su podio
   (`town_crier_podium`) y grita noticias aleatorias predeterminadas cada
-  20-45 segundos.
+  20-45 segundos: texto flotante sobre su cabeza + mensaje en el chat de los
+  jugadores cercanos (48 bloques) + sonido.
 
 ## Como darle trabajo a un aldeano
 
@@ -42,17 +41,20 @@ El jar queda en `build/libs/`.
 ```
 src/main/java/com/r0mss/villagers/
 ├── VillagersMod.java              # Clase principal
-├── Config.java                    # Configuracion del mod
 ├── registry/
 │   ├── ModBlocks.java              # Bloques de trabajo
 │   ├── ModItems.java               # Items (block items)
 │   ├── ModPoiTypes.java            # Puntos de interes (job sites)
 │   └── ModProfessions.java         # Profesiones nuevas
 └── villager/
-    ├── VillagerLines.java          # Frases y noticias predeterminadas
-    ├── SpeechBubbles.java          # Texto flotante sobre el aldeano
-    └── VillagerBehaviorHandler.java # Logica: habla, estatico, gritos
+    ├── VillagerLines.java          # Noticias predeterminadas del pregonero
+    ├── SpeechBubbles.java          # Texto flotante + chat + sonido
+    └── VillagerBehaviorHandler.java # Logica: estatico + grito del pregonero
 ```
+
+Ademas, `src/main/resources/data/minecraft/tags/point_of_interest_type/acquirable_job_site.json`
+es imprescindible: es el tag vanilla que le dice a Minecraft que estos dos
+puestos son trabajos que un aldeano desempleado puede notar y reclamar.
 
 ## Roadmap / ideas pendientes
 

@@ -12,7 +12,6 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.registries.DeferredHolder;
@@ -23,12 +22,11 @@ import com.mojang.logging.LogUtils;
 /**
  * Punto de entrada del mod "Aldeanos Inmersivos".
  * <p>
- * Este mod agrega:
- * - Aldeanos que hablan de vez en cuando (frases ambientales aleatorias).
- * - Un nuevo trabajo "Guardian de Tierras": el aldeano se queda estatico
- *   vigilando el bloque de trabajo (guard_post).
- * - Un nuevo trabajo "Pregonero": el aldeano se queda estatico en su podio
- *   y grita noticias aleatorias predeterminadas.
+ * Este mod agrega dos trabajos nuevos de aldeano:
+ * - "Guardian de Tierras": se queda estatico vigilando su bloque de trabajo
+ *   (guard_post).
+ * - "Pregonero": se queda estatico en su podio (town_crier_podium) y grita
+ *   noticias aleatorias predeterminadas (texto flotante + chat + sonido).
  */
 @Mod(VillagersMod.MODID)
 public class VillagersMod {
@@ -60,10 +58,7 @@ public class VillagersMod {
 
         modEventBus.addListener(this::addCreative);
 
-        // Registrar el config
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
-
-        // Registrar el manejador de comportamiento de aldeanos (habla + trabajos estaticos)
+        // Registrar el manejador de comportamiento de aldeanos (trabajos estaticos + pregonero)
         NeoForge.EVENT_BUS.register(VillagerBehaviorHandler.class);
 
         LOGGER.info("Aldeanos Inmersivos cargado correctamente.");
