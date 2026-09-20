@@ -25,23 +25,22 @@ public final class SpeechBubbles {
 
     private static final String TAG_EXPIRE_TICK = "villagers_bubble_expire";
     private static final int LIFESPAN_TICKS = 110; // ~5.5s
-    private static final double CHAT_RANGE = 48.0;
 
     private SpeechBubbles() {
     }
 
-    public static void announce(LivingEntity speaker, String message) {
-        announce(speaker, message, "Pregonero");
+    public static void announce(LivingEntity speaker, String message, double chatRange) {
+        announce(speaker, message, "Pregonero", chatRange);
     }
 
-    public static void announce(LivingEntity speaker, String message, String speakerName) {
+    public static void announce(LivingEntity speaker, String message, String speakerName, double chatRange) {
         Level level = speaker.level();
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
 
         spawnFloatingText(serverLevel, speaker, message);
-        broadcastToNearbyChat(serverLevel, speaker, message, speakerName);
+        broadcastToNearbyChat(serverLevel, speaker, message, speakerName, chatRange);
 
         serverLevel.playSound(null, speaker.blockPosition(), SoundEvents.VILLAGER_YES,
                 SoundSource.NEUTRAL, 1.0f, 0.8f);
@@ -60,12 +59,13 @@ public final class SpeechBubbles {
         display.getPersistentData().putLong(TAG_EXPIRE_TICK, serverLevel.getGameTime() + LIFESPAN_TICKS);
     }
 
-    private static void broadcastToNearbyChat(ServerLevel serverLevel, LivingEntity speaker, String message, String speakerName) {
+    private static void broadcastToNearbyChat(ServerLevel serverLevel, LivingEntity speaker, String message,
+                                               String speakerName, double chatRange) {
         // Formato identico al de un mensaje de jugador normal: "<Nombre> mensaje",
         // sin color ni negrita especial, para que no se vea como un mensaje de sistema.
         Component chatMessage = Component.literal("<" + speakerName + "> " + message);
 
-        double rangeSq = CHAT_RANGE * CHAT_RANGE;
+        double rangeSq = chatRange * chatRange;
         for (ServerPlayer player : serverLevel.players()) {
             if (player.distanceToSqr(speaker) <= rangeSq) {
                 player.sendSystemMessage(chatMessage);

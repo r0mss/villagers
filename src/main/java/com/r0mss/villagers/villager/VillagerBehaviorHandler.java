@@ -1,5 +1,6 @@
 package com.r0mss.villagers.villager;
 
+import com.r0mss.villagers.Config;
 import com.r0mss.villagers.VillagersMod;
 import com.r0mss.villagers.block.GuardPostBlock;
 import com.r0mss.villagers.registry.ModProfessions;
@@ -48,10 +49,6 @@ public final class VillagerBehaviorHandler {
     private static final String TAG_FACING_YAW = "villagers_facing_yaw";
     private static final String TAG_NEXT_ATTACK = "villagers_next_attack";
 
-    // Rango de ticks entre gritos del pregonero
-    private static final int SHOUT_MIN_TICKS = 20 * 20;   // 20 segundos
-    private static final int SHOUT_MAX_TICKS = 20 * 45;   // 45 segundos
-
     // Cada cuanto revisa el Pregonero si hay jugadores cerca con logros pendientes
     private static final String TAG_NEXT_ACHIEVEMENT_CHECK = "villagers_next_achievement_check";
     private static final int ACHIEVEMENT_CHECK_INTERVAL_TICKS = 20 * 5; // cada 5 segundos
@@ -61,9 +58,6 @@ public final class VillagerBehaviorHandler {
     private static final double LEASH_RADIUS = 4.0;
     private static final double LEASH_RADIUS_SQ = LEASH_RADIUS * LEASH_RADIUS;
 
-    // Combate del Guardian
-    private static final double ATTACK_RANGE = 2.5;
-    private static final float ATTACK_DAMAGE = 7.0f; // ~3.5 corazones
     private static final int ATTACK_COOLDOWN_TICKS = 20; // 1 segundo
 
     private VillagerBehaviorHandler() {
@@ -144,7 +138,7 @@ public final class VillagerBehaviorHandler {
             }
             String pending = CrierAchievements.popPending(player);
             if (pending != null) {
-                SpeechBubbles.announce(villager, pending);
+                SpeechBubbles.announce(villager, pending, Config.TOWN_CRIER_CHAT_RANGE.get());
                 return true;
             }
         }
@@ -155,14 +149,17 @@ public final class VillagerBehaviorHandler {
      * El Pregonero grita una noticia predeterminada cada cierto tiempo.
      */
     private static void handleTownCrierShout(Villager villager, CompoundTag data, long time) {
+        int minTicks = Config.TOWN_CRIER_SHOUT_MIN_SECONDS.get() * 20;
+        int maxTicks = Math.max(minTicks, Config.TOWN_CRIER_SHOUT_MAX_SECONDS.get() * 20);
+
         long nextShout = data.getLong(TAG_NEXT_SHOUT);
         if (nextShout == 0L) {
-            data.putLong(TAG_NEXT_SHOUT, time + randomBetween(villager, SHOUT_MIN_TICKS, SHOUT_MAX_TICKS));
+            data.putLong(TAG_NEXT_SHOUT, time + randomBetween(villager, minTicks, maxTicks));
             return;
         }
         if (time >= nextShout) {
-            SpeechBubbles.announce(villager, VillagerLines.randomNews());
-            data.putLong(TAG_NEXT_SHOUT, time + randomBetween(villager, SHOUT_MIN_TICKS, SHOUT_MAX_TICKS));
+            SpeechBubbles.announce(villager, VillagerLines.randomNews(), Config.TOWN_CRIER_CHAT_RANGE.get());
+            data.putLong(TAG_NEXT_SHOUT, time + randomBetween(villager, minTicks, maxTicks));
         }
     }
 
@@ -191,7 +188,10 @@ public final class VillagerBehaviorHandler {
             return;
         }
 
-        AABB searchArea = villager.getBoundingBox().inflate(ATTACK_RANGE);
+        double attackRange = Config.GUARDIAN_ATTACK_RANGE.get();
+        float attackDamage = Config.GUARDIAN_ATTACK_DAMAGE.get().floatValue();
+
+        AABB searchArea = villager.getBoundingBox().inflate(attackRange);
         List<LivingEntity> nearbyEnemies = villager.level().getEntitiesOfClass(
                 LivingEntity.class, searchArea,
                 entity -> entity instanceof Enemy && entity.isAlive()
@@ -201,11 +201,11 @@ public final class VillagerBehaviorHandler {
                 .min((a, b) -> Double.compare(a.distanceToSqr(villager), b.distanceToSqr(villager)))
                 .orElse(null);
 
-        if (target == null || villager.distanceToSqr(target) > ATTACK_RANGE * ATTACK_RANGE) {
+        if (target == null || villager.distanceToSqr(target) > attackRange * attackRange) {
             return;
         }
 
-        target.hurt(villager.damageSources().mobAttack(villager), ATTACK_DAMAGE);
+        target.hurt(villager.damageSources().mobAttack(villager), attackDamage);
         villager.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
         data.putLong(TAG_NEXT_ATTACK, time + ATTACK_COOLDOWN_TICKS);
     }

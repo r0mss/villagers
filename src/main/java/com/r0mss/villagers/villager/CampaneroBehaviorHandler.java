@@ -1,5 +1,6 @@
 package com.r0mss.villagers.villager;
 
+import com.r0mss.villagers.Config;
 import com.r0mss.villagers.registry.ModProfessions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -105,7 +106,7 @@ public final class CampaneroBehaviorHandler {
 
         data.putInt(TAG_PERIOD, period);
         ringBell(level, jobSitePos);
-        SpeechBubbles.announce(villager, pickLine(period), "Campanero");
+        SpeechBubbles.announce(villager, pickLine(period), "Campanero", Config.CAMPANERO_CHAT_RANGE.get());
     }
 
     private static void ringBell(ServerLevel level, BlockPos jobSitePos) {

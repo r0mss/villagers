@@ -75,6 +75,8 @@ public class VillagersMod {
         modEventBus.addListener((BlockEntityTypeAddBlocksEvent event) ->
                 event.modify(BlockEntityType.BELL, ModBlocks.CAMPANERO_BELL.get()));
 
+        modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, Config.SPEC);
+
         // Registrar los manejadores de comportamiento de aldeanos
         NeoForge.EVENT_BUS.register(VillagerBehaviorHandler.class);
         NeoForge.EVENT_BUS.register(GuardianFeedingHandler.class);
