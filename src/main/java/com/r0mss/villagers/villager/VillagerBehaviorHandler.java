@@ -7,6 +7,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -49,6 +51,11 @@ public final class VillagerBehaviorHandler {
     // Rango de ticks entre gritos del pregonero
     private static final int SHOUT_MIN_TICKS = 20 * 20;   // 20 segundos
     private static final int SHOUT_MAX_TICKS = 20 * 45;   // 45 segundos
+
+    // Cada cuanto revisa el Pregonero si hay jugadores cerca con logros pendientes
+    private static final String TAG_NEXT_ACHIEVEMENT_CHECK = "villagers_next_achievement_check";
+    private static final int ACHIEVEMENT_CHECK_INTERVAL_TICKS = 20 * 5; // cada 5 segundos
+    private static final double ACHIEVEMENT_RANGE = 16.0;
 
     // Que tan lejos de su puesto puede alejarse antes de que lo hagamos volver caminando
     private static final double LEASH_RADIUS = 4.0;
@@ -108,8 +115,40 @@ public final class VillagerBehaviorHandler {
         }
 
         if (isCrier) {
-            handleTownCrierShout(villager, data, villager.level().getGameTime());
+            if (!announceNearbyAchievement(villager, data)) {
+                handleTownCrierShout(villager, data, villager.level().getGameTime());
+            }
         }
+    }
+
+    /**
+     * Revisa (con su propio enfriamiento, cada {@value #ACHIEVEMENT_CHECK_INTERVAL_TICKS}
+     * ticks) si hay algun jugador cerca con un logro pendiente por anunciar.
+     * Si anuncia uno, ese ciclo no se hace ademas una noticia aleatoria.
+     */
+    private static boolean announceNearbyAchievement(Villager villager, CompoundTag data) {
+        long time = villager.level().getGameTime();
+        if (data.contains(TAG_NEXT_ACHIEVEMENT_CHECK) && time < data.getLong(TAG_NEXT_ACHIEVEMENT_CHECK)) {
+            return false;
+        }
+        data.putLong(TAG_NEXT_ACHIEVEMENT_CHECK, time + ACHIEVEMENT_CHECK_INTERVAL_TICKS);
+
+        if (!(villager.level() instanceof ServerLevel serverLevel)) {
+            return false;
+        }
+
+        double rangeSq = ACHIEVEMENT_RANGE * ACHIEVEMENT_RANGE;
+        for (ServerPlayer player : serverLevel.players()) {
+            if (player.distanceToSqr(villager) > rangeSq) {
+                continue;
+            }
+            String pending = CrierAchievements.popPending(player);
+            if (pending != null) {
+                SpeechBubbles.announce(villager, pending);
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

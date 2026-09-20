@@ -43,4 +43,14 @@ public class ModProfessions {
                     ImmutableSet.of(),
                     SoundEvents.VILLAGER_WORK_CARTOGRAPHER
             ));
+
+    public static final DeferredHolder<VillagerProfession, VillagerProfession> CAMPANERO =
+            PROFESSIONS.register("campanero", () -> new VillagerProfession(
+                    "campanero",
+                    holder -> holder.value() == ModPoiTypes.CAMPANERO_BELL_POI.get(),
+                    holder -> holder.value() == ModPoiTypes.CAMPANERO_BELL_POI.get(),
+                    ImmutableSet.of(),
+                    ImmutableSet.of(),
+                    SoundEvents.VILLAGER_WORK_LIBRARIAN
+            ));
 }

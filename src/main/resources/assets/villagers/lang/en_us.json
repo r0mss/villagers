@@ -3,10 +3,13 @@
 
   "block.villagers.guard_post": "Guard Post",
   "block.villagers.town_crier_podium": "Town Crier Podium",
+  "block.villagers.campanero_bell": "Bell Keeper's Bell",
 
   "item.villagers.guard_post": "Guard Post",
   "item.villagers.town_crier_podium": "Town Crier Podium",
+  "item.villagers.campanero_bell": "Bell Keeper's Bell",
 
   "entity.minecraft.villager.land_guardian": "Land Guardian",
-  "entity.minecraft.villager.town_crier": "Town Crier"
+  "entity.minecraft.villager.town_crier": "Town Crier",
+  "entity.minecraft.villager.campanero": "Bell Keeper"
 }

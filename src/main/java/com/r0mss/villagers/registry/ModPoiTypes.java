@@ -38,4 +38,13 @@ public class ModPoiTypes {
                     1
             )
     );
+
+    public static final DeferredHolder<PoiType, PoiType> CAMPANERO_BELL_POI = POI_TYPES.register(
+            "campanero_bell_poi",
+            () -> new PoiType(
+                    ImmutableSet.copyOf(ModBlocks.CAMPANERO_BELL.get().getStateDefinition().getPossibleStates()),
+                    1,
+                    1
+            )
+    );
 }

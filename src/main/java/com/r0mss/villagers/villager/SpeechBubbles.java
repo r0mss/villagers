@@ -12,9 +12,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 
 /**
- * Muestra un anuncio del Pregonero: un texto flotante encima de su cabeza
- * (entidad text_display vanilla) y el mismo mensaje en el chat de los
- * jugadores cercanos.
+ * Utilidades para mostrar texto flotante (entidad text_display vanilla)
+ * y anuncios en el chat con formato de aldeano, reutilizadas por el
+ * Pregonero y el Campanero.
  * <p>
  * No usamos ningun paquete de red propio ni mixins: la entidad text_display
  * es completamente vanilla, y sus propiedades (billboard, color de fondo,
@@ -31,13 +31,17 @@ public final class SpeechBubbles {
     }
 
     public static void announce(LivingEntity speaker, String message) {
+        announce(speaker, message, "Pregonero");
+    }
+
+    public static void announce(LivingEntity speaker, String message, String speakerName) {
         Level level = speaker.level();
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
 
         spawnFloatingText(serverLevel, speaker, message);
-        broadcastToNearbyChat(serverLevel, speaker, message);
+        broadcastToNearbyChat(serverLevel, speaker, message, speakerName);
 
         serverLevel.playSound(null, speaker.blockPosition(), SoundEvents.VILLAGER_YES,
                 SoundSource.NEUTRAL, 1.0f, 0.8f);
@@ -47,35 +51,19 @@ public final class SpeechBubbles {
         Display.TextDisplay display = new Display.TextDisplay(EntityType.TEXT_DISPLAY, serverLevel);
         display.moveTo(speaker.getX(), speaker.getEyeY() + 0.55, speaker.getZ(), 0.0F, 0.0F);
 
-        // Propiedades base de la entidad (setters publicos normales)
         display.setNoGravity(true);
         display.setSilent(true);
         display.setInvulnerable(true);
-
-        // Propiedades propias de la entidad "display" (no tienen setter publico,
-        // se aplican mediante NBT publico, igual que /summon)
-        CompoundTag tag = new CompoundTag();
-        tag.putString("text", toJsonText(message));
-        tag.putString("billboard", "center");
-        tag.putFloat("view_range", 16.0f);
-        tag.putFloat("shadow_radius", 0.0f);
-        tag.putFloat("shadow_strength", 0.0f);
-        tag.putShort("line_width", (short) 200);
-        tag.putInt("background", 0);            // fondo totalmente transparente
-        tag.putByte("text_opacity", (byte) -1);  // texto totalmente opaco
-        tag.putBoolean("see_through", false);
-        tag.putBoolean("default_background", false);
-        tag.putBoolean("shadow", true);
-        display.load(tag);
+        display.load(buildDisplayTag(message, "gold", true));
 
         serverLevel.addFreshEntity(display);
         display.getPersistentData().putLong(TAG_EXPIRE_TICK, serverLevel.getGameTime() + LIFESPAN_TICKS);
     }
 
-    private static void broadcastToNearbyChat(ServerLevel serverLevel, LivingEntity speaker, String message) {
+    private static void broadcastToNearbyChat(ServerLevel serverLevel, LivingEntity speaker, String message, String speakerName) {
         // Formato identico al de un mensaje de jugador normal: "<Nombre> mensaje",
         // sin color ni negrita especial, para que no se vea como un mensaje de sistema.
-        Component chatMessage = Component.literal("<Pregonero> " + message);
+        Component chatMessage = Component.literal("<" + speakerName + "> " + message);
 
         double rangeSq = CHAT_RANGE * CHAT_RANGE;
         for (ServerPlayer player : serverLevel.players()) {
@@ -87,7 +75,9 @@ public final class SpeechBubbles {
 
     /**
      * Debe llamarse en el tick de cualquier entidad text_display creada por
-     * este mod, para eliminarla cuando expire su tiempo de vida.
+     * este mod, para eliminarla cuando expire su tiempo de vida. Los
+     * displays permanentes (como el reloj del Campanero) nunca tienen esta
+     * etiqueta, asi que no se ven afectados.
      */
     public static void tickDisplay(Display.TextDisplay display) {
         CompoundTag data = display.getPersistentData();
@@ -100,10 +90,37 @@ public final class SpeechBubbles {
         }
     }
 
-    private static String toJsonText(String message) {
+    /**
+     * Construye el NBT publico (identico a lo que usaria /summon) para
+     * configurar una entidad text_display: texto, color, fondo transparente,
+     * que siempre mire al jugador, etc.
+     */
+    public static CompoundTag buildDisplayTag(String message, String color, boolean bold) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("text", toJsonText(message, color, bold));
+        tag.putString("billboard", "center");
+        tag.putFloat("view_range", 16.0f);
+        tag.putFloat("shadow_radius", 0.0f);
+        tag.putFloat("shadow_strength", 0.0f);
+        tag.putShort("line_width", (short) 200);
+        tag.putInt("background", 0);            // fondo totalmente transparente
+        tag.putByte("text_opacity", (byte) -1);  // texto totalmente opaco
+        tag.putBoolean("see_through", false);
+        tag.putBoolean("default_background", false);
+        tag.putBoolean("shadow", true);
+        return tag;
+    }
+
+    private static String toJsonText(String message, String color, boolean bold) {
         String escaped = message
                 .replace("\\", "\\\\")
                 .replace("\"", "\\\"");
-        return "{\"text\":\"" + escaped + "\",\"color\":\"gold\",\"bold\":true}";
+        StringBuilder json = new StringBuilder();
+        json.append("{\"text\":\"").append(escaped).append("\",\"color\":\"").append(color).append("\"");
+        if (bold) {
+            json.append(",\"bold\":true");
+        }
+        json.append("}");
+        return json.toString();
     }
 }

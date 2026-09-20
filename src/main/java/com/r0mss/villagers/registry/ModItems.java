@@ -17,4 +17,7 @@ public class ModItems {
 
     public static final DeferredItem<BlockItem> TOWN_CRIER_PODIUM_ITEM =
             ITEMS.registerSimpleBlockItem("town_crier_podium", ModBlocks.TOWN_CRIER_PODIUM);
+
+    public static final DeferredItem<BlockItem> CAMPANERO_BELL_ITEM =
+            ITEMS.registerSimpleBlockItem("campanero_bell", ModBlocks.CAMPANERO_BELL);
 }

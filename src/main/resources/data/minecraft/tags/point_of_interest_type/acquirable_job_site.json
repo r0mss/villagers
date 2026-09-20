@@ -1,6 +1,7 @@
 {
   "values": [
     "villagers:guard_post_poi",
-    "villagers:town_crier_poi"
+    "villagers:town_crier_poi",
+    "villagers:campanero_bell_poi"
   ]
 }
