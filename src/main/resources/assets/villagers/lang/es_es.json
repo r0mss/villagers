@@ -4,10 +4,12 @@
   "block.villagers.guard_post": "Puesto de Guardia",
   "block.villagers.town_crier_podium": "Podio del Pregonero",
   "block.villagers.campanero_bell": "Campana del Campanero",
+  "block.villagers.info_board": "Tablon de Informacion",
 
   "item.villagers.guard_post": "Puesto de Guardia",
   "item.villagers.town_crier_podium": "Podio del Pregonero",
   "item.villagers.campanero_bell": "Campana del Campanero",
+  "item.villagers.info_board": "Tablon de Informacion",
 
   "entity.minecraft.villager.land_guardian": "Guardian de Tierras",
   "entity.minecraft.villager.town_crier": "Pregonero",

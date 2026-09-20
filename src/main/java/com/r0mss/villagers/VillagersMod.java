@@ -1,5 +1,7 @@
 package com.r0mss.villagers;
 
+import com.r0mss.villagers.network.InfoBoardNetworking;
+import com.r0mss.villagers.registry.ModBlockEntities;
 import com.r0mss.villagers.registry.ModBlocks;
 import com.r0mss.villagers.registry.ModItems;
 import com.r0mss.villagers.registry.ModPoiTypes;
@@ -9,6 +11,7 @@ import com.r0mss.villagers.villager.CrierAchievements;
 import com.r0mss.villagers.villager.GuardianFeedingHandler;
 import com.r0mss.villagers.villager.ModVillagerTrades;
 import com.r0mss.villagers.villager.VillagerBehaviorHandler;
+import com.r0mss.villagers.villager.VillagerNaming;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -57,6 +60,7 @@ public class VillagersMod {
                         output.accept(ModItems.GUARD_POST_ITEM.get());
                         output.accept(ModItems.TOWN_CRIER_PODIUM_ITEM.get());
                         output.accept(ModItems.CAMPANERO_BELL_ITEM.get());
+                        output.accept(ModItems.INFO_BOARD_ITEM.get());
                     }).build());
 
     public VillagersMod(IEventBus modEventBus, ModContainer modContainer) {
@@ -65,6 +69,7 @@ public class VillagersMod {
         ModItems.ITEMS.register(modEventBus);
         ModPoiTypes.POI_TYPES.register(modEventBus);
         ModProfessions.PROFESSIONS.register(modEventBus);
+        ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
 
         modEventBus.addListener(this::addCreative);
@@ -77,12 +82,15 @@ public class VillagersMod {
 
         modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.COMMON, Config.SPEC);
 
+        modEventBus.addListener(InfoBoardNetworking::register);
+
         // Registrar los manejadores de comportamiento de aldeanos
         NeoForge.EVENT_BUS.register(VillagerBehaviorHandler.class);
         NeoForge.EVENT_BUS.register(GuardianFeedingHandler.class);
         NeoForge.EVENT_BUS.register(CampaneroBehaviorHandler.class);
         NeoForge.EVENT_BUS.register(CrierAchievements.class);
         NeoForge.EVENT_BUS.register(ModVillagerTrades.class);
+        NeoForge.EVENT_BUS.register(VillagerNaming.class);
 
         LOGGER.info("Aldeanos Inmersivos cargado correctamente.");
     }
@@ -92,6 +100,7 @@ public class VillagersMod {
             event.accept(ModItems.GUARD_POST_ITEM);
             event.accept(ModItems.TOWN_CRIER_PODIUM_ITEM);
             event.accept(ModItems.CAMPANERO_BELL_ITEM);
+            event.accept(ModItems.INFO_BOARD_ITEM);
         }
     }
 }

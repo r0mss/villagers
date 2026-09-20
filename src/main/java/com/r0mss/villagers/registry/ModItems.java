@@ -20,4 +20,7 @@ public class ModItems {
 
     public static final DeferredItem<BlockItem> CAMPANERO_BELL_ITEM =
             ITEMS.registerSimpleBlockItem("campanero_bell", ModBlocks.CAMPANERO_BELL);
+
+    public static final DeferredItem<BlockItem> INFO_BOARD_ITEM =
+            ITEMS.registerSimpleBlockItem("info_board", ModBlocks.INFO_BOARD);
 }

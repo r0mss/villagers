@@ -2,6 +2,7 @@ package com.r0mss.villagers.registry;
 
 import com.r0mss.villagers.VillagersMod;
 import com.r0mss.villagers.block.GuardPostBlock;
+import com.r0mss.villagers.block.InfoBoardBlock;
 import net.minecraft.world.level.block.BellBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -44,5 +45,15 @@ public class ModBlocks {
     public static final DeferredBlock<BellBlock> CAMPANERO_BELL = BLOCKS.register(
             "campanero_bell",
             () -> new BellBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.BELL))
+    );
+
+    // Tablon de informacion del asentamiento (no es un puesto de trabajo, no tiene profesion asociada)
+    public static final DeferredBlock<InfoBoardBlock> INFO_BOARD = BLOCKS.register(
+            "info_board",
+            () -> new InfoBoardBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.WOOD)
+                    .strength(2.0f, 3.0f)
+                    .sound(net.minecraft.world.level.block.SoundType.WOOD)
+                    .noOcclusion())
     );
 }

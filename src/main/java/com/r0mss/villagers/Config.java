@@ -37,5 +37,10 @@ public class Config {
             .comment("Tiempo maximo (en segundos) entre noticias que grita el Pregonero.")
             .defineInRange("townCrierShoutMaxSeconds", 45, 1, 600);
 
+    // --- Tablon de informacion ---
+    public static final ModConfigSpec.DoubleValue INFO_BOARD_RADIUS = BUILDER
+            .comment("Radio (en bloques) que cuenta el tablon de informacion como parte del asentamiento.")
+            .defineInRange("infoBoardRadius", 100.0, 16.0, 512.0);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 }

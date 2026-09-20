@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "villagers:block/info_board_top",
+    "bottom": "villagers:block/info_board_bottom",
+    "side": "villagers:block/info_board_side"
+  }
+}

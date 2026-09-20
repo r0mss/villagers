@@ -1,0 +1,127 @@
+package com.r0mss.villagers.network;
+
+import com.r0mss.villagers.Config;
+import com.r0mss.villagers.block.InfoBoardBlockEntity;
+import com.r0mss.villagers.client.InfoBoardScreen;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Registro de los paquetes del tablon de informacion, y la logica para:
+ * - Calcular la info del asentamiento y mandarla al cliente para que abra
+ *   la pantalla (servidor -> cliente).
+ * - Guardar el nuevo nombre que el jugador escribio (cliente -> servidor).
+ */
+public final class InfoBoardNetworking {
+
+    // Margen de seguridad para validar que el jugador siga cerca del tablon al guardar
+    private static final double RENAME_MAX_DISTANCE_SQ = 16.0 * 16.0;
+
+    private InfoBoardNetworking() {
+    }
+
+    public static void register(RegisterPayloadHandlersEvent event) {
+        PayloadRegistrar registrar = event.registrar("1");
+
+        registrar.playToClient(OpenInfoBoardPacket.TYPE, OpenInfoBoardPacket.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> openScreenOnClient(payload)));
+
+        registrar.playToServer(RenameInfoBoardPacket.TYPE, RenameInfoBoardPacket.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> handleRename(payload, (ServerPlayer) context.player())));
+    }
+
+    /**
+     * Escanea los aldeanos cercanos, arma las lineas de informacion, y le
+     * manda al jugador el paquete para que abra la pantalla.
+     */
+    public static void openFor(ServerPlayer player, InfoBoardBlockEntity board, BlockPos pos) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+
+        double radius = Config.INFO_BOARD_RADIUS.get();
+        List<Villager> nearby = serverLevel.getEntitiesOfClass(Villager.class, new AABB(pos).inflate(radius));
+
+        int total = nearby.size();
+        Map<String, Integer> professionCounts = new LinkedHashMap<>();
+        for (Villager villager : nearby) {
+            String prettyName = prettyProfessionName(villager.getVillagerData().getProfession().name());
+            professionCounts.merge(prettyName, 1, Integer::sum);
+        }
+
+        String settlementType;
+        if (total < 5) {
+            settlementType = "Asentamiento";
+        } else if (total <= 15) {
+            settlementType = "Pueblo";
+        } else {
+            settlementType = "Ciudad";
+        }
+
+        List<String> lines = new ArrayList<>();
+        lines.add("Tipo: " + settlementType);
+        lines.add("Poblacion: " + total + " aldeanos");
+        lines.add("");
+        if (professionCounts.isEmpty()) {
+            lines.add("Trabajadores: ninguno");
+        } else {
+            lines.add("Trabajadores:");
+            professionCounts.forEach((name, count) -> lines.add("- " + name + " x" + count));
+        }
+
+        PacketDistributor.sendToPlayer(player, new OpenInfoBoardPacket(pos, board.getSettlementName(), lines));
+    }
+
+    private static void handleRename(RenameInfoBoardPacket packet, ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) {
+            return;
+        }
+        if (player.distanceToSqr(Vec3.atCenterOf(packet.pos())) > RENAME_MAX_DISTANCE_SQ) {
+            return;
+        }
+        if (serverLevel.getBlockEntity(packet.pos()) instanceof InfoBoardBlockEntity board) {
+            // Limitamos el largo por las dudas, para que no se pueda mandar un nombre gigante
+            String name = packet.newName();
+            if (name.length() > 48) {
+                name = name.substring(0, 48);
+            }
+            board.setSettlementName(name);
+        }
+    }
+
+    private static void openScreenOnClient(OpenInfoBoardPacket packet) {
+        Minecraft.getInstance().setScreen(new InfoBoardScreen(packet.pos(), packet.currentName(), packet.infoLines()));
+    }
+
+    private static String prettyProfessionName(String professionId) {
+        return switch (professionId) {
+            case "none" -> "Sin trabajo";
+            case "nitwit" -> "Bobo del pueblo";
+            case "land_guardian" -> "Guardian de Tierras";
+            case "town_crier" -> "Pregonero";
+            case "campanero" -> "Campanero";
+            default -> capitalize(professionId);
+        };
+    }
+
+    private static String capitalize(String id) {
+        String spaced = id.replace('_', ' ');
+        if (spaced.isEmpty()) {
+            return spaced;
+        }
+        return Character.toUpperCase(spaced.charAt(0)) + spaced.substring(1);
+    }
+}
