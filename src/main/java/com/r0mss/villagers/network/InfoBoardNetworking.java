@@ -99,6 +99,10 @@ public final class InfoBoardNetworking {
 
         double distSq = player.distanceToSqr(Vec3.atCenterOf(packet.pos()));
         if (distSq > RENAME_MAX_DISTANCE_SQ) {
+            player.displayClientMessage(
+                    net.minecraft.network.chat.Component.literal("[Villagers] Save FAILED: you moved too far from the board"),
+                    false
+            );
             VillagersMod.LOGGER.info(
                     "[villagers] [debug] Rename ignorado por distancia: jugador={} pos={} distSq={} limiteSq={}",
                     player.getGameProfile().getName(), packet.pos(), distSq, RENAME_MAX_DISTANCE_SQ
@@ -113,11 +117,19 @@ public final class InfoBoardNetworking {
                 name = name.substring(0, 48);
             }
             board.setSettlementName(name);
+            player.displayClientMessage(
+                    net.minecraft.network.chat.Component.literal("[Villagers] Settlement renamed to: '" + name + "'"),
+                    false
+            );
             VillagersMod.LOGGER.info(
                     "[villagers] [debug] Rename aplicado en {}: nuevoNombre='{}' confirmado='{}'",
                     packet.pos(), name, board.getSettlementName()
             );
         } else {
+            player.displayClientMessage(
+                    net.minecraft.network.chat.Component.literal("[Villagers] Save FAILED: no info board found at that position"),
+                    false
+            );
             VillagersMod.LOGGER.info(
                     "[villagers] [debug] Rename ignorado: no hay InfoBoardBlockEntity en {} (encontrado: {})",
                     packet.pos(), blockEntity
