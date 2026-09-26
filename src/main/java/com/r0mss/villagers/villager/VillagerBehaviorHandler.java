@@ -151,9 +151,11 @@ public final class VillagerBehaviorHandler {
             if (player.distanceToSqr(villager) > rangeSq) {
                 continue;
             }
-            String pending = CrierAchievements.popPending(player);
-            if (pending != null) {
-                SpeechBubbles.announce(villager, pending, Config.TOWN_CRIER_CHAT_RANGE.get());
+            String pendingKey = CrierAchievements.popPending(player);
+            if (pendingKey != null) {
+                Object[] args = {player.getGameProfile().getName()};
+                SpeechBubbles.announce(villager, pendingKey, args,
+                        "entity.minecraft.villager.town_crier", Config.TOWN_CRIER_CHAT_RANGE.get());
                 return true;
             }
         }
@@ -173,7 +175,8 @@ public final class VillagerBehaviorHandler {
             return;
         }
         if (time >= nextShout) {
-            SpeechBubbles.announce(villager, VillagerLines.randomNews(), Config.TOWN_CRIER_CHAT_RANGE.get());
+            SpeechBubbles.announce(villager, VillagerLines.randomNewsKey(),
+                    "entity.minecraft.villager.town_crier", Config.TOWN_CRIER_CHAT_RANGE.get());
             data.putLong(TAG_NEXT_SHOUT, time + randomBetween(villager, minTicks, maxTicks));
         }
     }

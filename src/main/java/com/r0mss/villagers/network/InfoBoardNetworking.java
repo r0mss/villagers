@@ -65,21 +65,21 @@ public final class InfoBoardNetworking {
 
         String settlementType;
         if (total < 5) {
-            settlementType = "Asentamiento";
+            settlementType = "Settlement";
         } else if (total <= 15) {
-            settlementType = "Pueblo";
+            settlementType = "Village";
         } else {
-            settlementType = "Ciudad";
+            settlementType = "City";
         }
 
         List<String> lines = new ArrayList<>();
-        lines.add("Tipo: " + settlementType);
-        lines.add("Poblacion: " + total + " aldeanos");
+        lines.add("Type: " + settlementType);
+        lines.add("Population: " + total + " villagers");
         lines.add("");
         if (professionCounts.isEmpty()) {
-            lines.add("Trabajadores: ninguno");
+            lines.add("Workers: none");
         } else {
-            lines.add("Trabajadores:");
+            lines.add("Workers:");
             professionCounts.forEach((name, count) -> lines.add("- " + name + " x" + count));
         }
 
@@ -135,11 +135,11 @@ public final class InfoBoardNetworking {
 
     private static String prettyProfessionName(String professionId) {
         return switch (professionId) {
-            case "none" -> "Sin trabajo";
-            case "nitwit" -> "Bobo del pueblo";
-            case "land_guardian" -> "Guardian de Tierras";
-            case "town_crier" -> "Pregonero";
-            case "campanero" -> "Campanero";
+            case "none" -> "Unemployed";
+            case "nitwit" -> "Nitwit";
+            case "land_guardian" -> "Land Guardian";
+            case "town_crier" -> "Town Crier";
+            case "campanero" -> "Bell Keeper";
             default -> capitalize(professionId);
         };
     }

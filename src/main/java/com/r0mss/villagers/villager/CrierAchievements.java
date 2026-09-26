@@ -18,9 +18,11 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 /**
  * Rastrea logros/hitos del jugador (viajar al Nether, conseguir armadura
- * completa de hierro, matar 10 creepers) y los deja "pendientes" en el
- * jugador. Cuando este se acerca a cualquier Pregonero, el mensaje se
- * anuncia (ver {@link VillagerBehaviorHandler}) y se borra de la lista.
+ * completa de hierro, matar 10 creepers) y deja pendiente la CLAVE de
+ * traduccion correspondiente. Cuando el jugador se acerca a cualquier
+ * Pregonero, este anuncia el logro usando su propio nombre como argumento
+ * (ver {@link VillagerBehaviorHandler}), en el idioma de cada jugador que
+ * lo escuche.
  * <p>
  * Es un test con pocos logros a proposito; se pueden agregar mas despues
  * siguiendo el mismo patron (llamar a {@link #queue}).
@@ -34,22 +36,26 @@ public final class CrierAchievements {
 
     private static final int CREEPER_MILESTONE = 10;
 
+    public static final String KEY_NETHER = "message.villagers.achievement.nether";
+    public static final String KEY_IRON_ARMOR = "message.villagers.achievement.iron_armor";
+    public static final String KEY_CREEPERS = "message.villagers.achievement.creepers";
+
     private CrierAchievements() {
     }
 
     /**
-     * Agrega un mensaje a la lista de anuncios pendientes de un jugador.
+     * Agrega una clave de traduccion a la lista de anuncios pendientes de un jugador.
      */
-    public static void queue(Player player, String message) {
+    public static void queue(Player player, String translationKey) {
         CompoundTag data = player.getPersistentData();
         ListTag pending = data.getList(TAG_PENDING, Tag.TAG_STRING);
-        pending.add(StringTag.valueOf(message));
+        pending.add(StringTag.valueOf(translationKey));
         data.put(TAG_PENDING, pending);
     }
 
     /**
-     * Saca (y elimina) el primer mensaje pendiente de un jugador, o null si
-     * no tiene ninguno.
+     * Saca (y elimina) la primera clave pendiente de un jugador, o null si
+     * no tiene ninguna.
      */
     public static String popPending(ServerPlayer player) {
         CompoundTag data = player.getPersistentData();
@@ -73,8 +79,7 @@ public final class CrierAchievements {
             return;
         }
         data.putBoolean(TAG_NETHER_ANNOUNCED, true);
-        queue(player, "¡Atencion, ciudadanos! Se dice que " + player.getName().getString()
-                + " ha cruzado hacia el Nether!");
+        queue(player, KEY_NETHER);
     }
 
     @SubscribeEvent
@@ -99,8 +104,7 @@ public final class CrierAchievements {
         }
 
         data.putBoolean(TAG_IRON_ARMOR_ANNOUNCED, true);
-        queue(player, "¡Escuchen bien! " + player.getName().getString()
-                + " ahora porta una armadura completa de hierro!");
+        queue(player, KEY_IRON_ARMOR);
     }
 
     private static boolean hasFullIronArmor(ServerPlayer player) {
@@ -124,8 +128,7 @@ public final class CrierAchievements {
         data.putInt(TAG_CREEPER_KILLS, kills);
 
         if (kills == CREEPER_MILESTONE) {
-            queue(player, "¡Que se sepa! " + player.getName().getString()
-                    + " ha acabado con diez creepers!");
+            queue(player, KEY_CREEPERS);
         }
     }
 }

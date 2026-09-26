@@ -13,5 +13,32 @@
 
   "entity.minecraft.villager.land_guardian": "Land Guardian",
   "entity.minecraft.villager.town_crier": "Town Crier",
-  "entity.minecraft.villager.campanero": "Bell Keeper"
+  "entity.minecraft.villager.campanero": "Bell Keeper",
+
+  "message.villagers.crier.news.market": "Hear ye, hear ye! The market opens at dawn!",
+  "message.villagers.crier.news.blacksmith": "Blacksmith wanted! Good pay guaranteed!",
+  "message.villagers.crier.news.creepers": "Watch out for creepers near the forest!",
+  "message.villagers.crier.news.harvest": "A great wheat harvest this year, let's celebrate!",
+  "message.villagers.crier.news.pirates": "Pirate activity reported along the coast!",
+  "message.villagers.crier.news.well": "The village well was repaired this week!",
+  "message.villagers.crier.news.curfew": "Notice! No trading allowed after nightfall!",
+  "message.villagers.crier.news.trade_route": "New trade route opened to the north!",
+  "message.villagers.crier.news.strangers": "Strangers were seen lurking about last night!",
+  "message.villagers.crier.news.peaceful": "All is quiet in the village, good news indeed!",
+
+  "message.villagers.achievement.nether": "Attention, citizens! Word has it that %s has crossed into the Nether!",
+  "message.villagers.achievement.iron_armor": "Hear ye! %s now wears a full suit of iron armor!",
+  "message.villagers.achievement.creepers": "Word has spread! %s has taken down ten creepers!",
+
+  "message.villagers.campanero.morning.0": "Good morning! Time to get to work!",
+  "message.villagers.campanero.morning.1": "Rise and shine! The day has begun, back to work everyone.",
+  "message.villagers.campanero.morning.2": "The bell rings! The village wakes for another day of labor.",
+
+  "message.villagers.campanero.midday.0": "It's midday! A good time for a break.",
+  "message.villagers.campanero.midday.1": "The sun is high, it's already midday.",
+  "message.villagers.campanero.midday.2": "Midday chimes! The workday carries on.",
+
+  "message.villagers.campanero.night.0": "Night falls! Time to seek shelter and rest.",
+  "message.villagers.campanero.night.1": "Careful, creatures roam at night. Better head in.",
+  "message.villagers.campanero.night.2": "The night bell tolls... time for bed."
 }

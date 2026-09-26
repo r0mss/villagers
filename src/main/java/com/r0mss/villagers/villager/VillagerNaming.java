@@ -1,5 +1,6 @@
 package com.r0mss.villagers.villager;
 
+import com.r0mss.villagers.Config;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
@@ -14,6 +15,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * de nuestras profesiones), la primera vez que lo vemos sin nombre. El
  * nombre queda para siempre (es el "CustomName" vanilla de la entidad, se
  * guarda solo con el mundo, no necesitamos datos propios).
+ * <p>
+ * Apagado por defecto (ver {@link Config#VILLAGER_NAMES_ENABLED}) para
+ * evitar conflictos con otros mods que agregan la misma funcionalidad.
  * <p>
  * Los aldeanos de Minecraft no tienen genero como tal; el pool esta dividido
  * en dos listas solo para variar el estilo de los nombres, elegidas al azar
@@ -36,6 +40,10 @@ public final class VillagerNaming {
 
     @SubscribeEvent
     public static void onEntityTick(EntityTickEvent.Post event) {
+        if (!Config.VILLAGER_NAMES_ENABLED.get()) {
+            return;
+        }
+
         Entity entity = event.getEntity();
         if (entity.level().isClientSide()) {
             return;

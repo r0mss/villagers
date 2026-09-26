@@ -13,5 +13,32 @@
 
   "entity.minecraft.villager.land_guardian": "Guardian de Tierras",
   "entity.minecraft.villager.town_crier": "Pregonero",
-  "entity.minecraft.villager.campanero": "Campanero"
+  "entity.minecraft.villager.campanero": "Campanero",
+
+  "message.villagers.crier.news.market": "¡Escuchen, escuchen! ¡El mercado abre al amanecer!",
+  "message.villagers.crier.news.blacksmith": "¡Se busca herrero! ¡Buen pago garantizado!",
+  "message.villagers.crier.news.creepers": "¡Cuidado con los creepers cerca del bosque!",
+  "message.villagers.crier.news.harvest": "¡Gran cosecha de trigo este año, celebremos!",
+  "message.villagers.crier.news.pirates": "¡Se reporta actividad de piratas en la costa!",
+  "message.villagers.crier.news.well": "¡El pozo del pueblo fue reparado esta semana!",
+  "message.villagers.crier.news.curfew": "¡Aviso! ¡No se permite comerciar despues del anochecer!",
+  "message.villagers.crier.news.trade_route": "¡Nueva ruta comercial abierta hacia el norte!",
+  "message.villagers.crier.news.strangers": "¡Extraños fueron vistos merodeando anoche!",
+  "message.villagers.crier.news.peaceful": "¡Todo tranquilo en el pueblo, buenas noticias!",
+
+  "message.villagers.achievement.nether": "¡Atencion, ciudadanos! Se dice que %s ha cruzado hacia el Nether!",
+  "message.villagers.achievement.iron_armor": "¡Escuchen bien! %s ahora porta una armadura completa de hierro!",
+  "message.villagers.achievement.creepers": "¡Que se sepa! %s ha acabado con diez creepers!",
+
+  "message.villagers.campanero.morning.0": "¡Buenos dias! ¡Hora de ponerse a trabajar!",
+  "message.villagers.campanero.morning.1": "¡Arriba! El dia ha comenzado, a trabajar se ha dicho.",
+  "message.villagers.campanero.morning.2": "¡Suena la campana! El pueblo despierta para otro dia de labor.",
+
+  "message.villagers.campanero.midday.0": "¡Es mediodia! Buen momento para un descanso.",
+  "message.villagers.campanero.midday.1": "El sol esta en lo alto, ya es mediodia.",
+  "message.villagers.campanero.midday.2": "¡Campanadas de mediodia! La jornada sigue su curso.",
+
+  "message.villagers.campanero.night.0": "¡Cae la noche! Es hora de resguardarse y dormir.",
+  "message.villagers.campanero.night.1": "Cuidado, las criaturas salen de noche. Mejor ir a descansar.",
+  "message.villagers.campanero.night.2": "Suena la campana de la noche... a dormir se ha dicho."
 }

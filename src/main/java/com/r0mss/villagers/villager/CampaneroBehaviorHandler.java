@@ -18,7 +18,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -43,20 +42,20 @@ public final class CampaneroBehaviorHandler {
     private static final long MIDDAY_START = 6000L;     // 12:00 PM
     private static final long NIGHT_START = 12000L;     // 6:00 PM
 
-    private static final List<String> MORNING_LINES = List.of(
-            "¡Buenos dias! ¡Hora de ponerse a trabajar!",
-            "¡Arriba! El dia ha comenzado, a trabajar se ha dicho.",
-            "¡Suena la campana! El pueblo despierta para otro dia de labor."
+    private static final List<String> MORNING_KEYS = List.of(
+            "message.villagers.campanero.morning.0",
+            "message.villagers.campanero.morning.1",
+            "message.villagers.campanero.morning.2"
     );
-    private static final List<String> MIDDAY_LINES = List.of(
-            "¡Es mediodia! Buen momento para un descanso.",
-            "El sol esta en lo alto, ya es mediodia.",
-            "¡Campanadas de mediodia! La jornada sigue su curso."
+    private static final List<String> MIDDAY_KEYS = List.of(
+            "message.villagers.campanero.midday.0",
+            "message.villagers.campanero.midday.1",
+            "message.villagers.campanero.midday.2"
     );
-    private static final List<String> NIGHT_LINES = List.of(
-            "¡Cae la noche! Es hora de resguardarse y dormir.",
-            "Cuidado, las criaturas salen de noche. Mejor ir a descansar.",
-            "Suena la campana de la noche... a dormir se ha dicho."
+    private static final List<String> NIGHT_KEYS = List.of(
+            "message.villagers.campanero.night.0",
+            "message.villagers.campanero.night.1",
+            "message.villagers.campanero.night.2"
     );
 
     private CampaneroBehaviorHandler() {
@@ -107,7 +106,8 @@ public final class CampaneroBehaviorHandler {
 
         data.putInt(TAG_PERIOD, period);
         ringBell(level, jobSitePos);
-        SpeechBubbles.announce(villager, pickLine(period), "Campanero", Config.CAMPANERO_CHAT_RANGE.get());
+        SpeechBubbles.announce(villager, pickLineKey(period), "entity.minecraft.villager.campanero",
+                Config.CAMPANERO_CHAT_RANGE.get());
     }
 
     private static void ringBell(ServerLevel level, BlockPos jobSitePos) {
@@ -127,11 +127,11 @@ public final class CampaneroBehaviorHandler {
         }
     }
 
-    private static String pickLine(int period) {
+    private static String pickLineKey(int period) {
         List<String> pool = switch (period) {
-            case 0 -> MORNING_LINES;
-            case 1 -> MIDDAY_LINES;
-            default -> NIGHT_LINES;
+            case 0 -> MORNING_KEYS;
+            case 1 -> MIDDAY_KEYS;
+            default -> NIGHT_KEYS;
         };
         return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
     }
@@ -147,40 +147,39 @@ public final class CampaneroBehaviorHandler {
         }
         data.putLong(TAG_NEXT_CLOCK_UPDATE, time + CLOCK_UPDATE_INTERVAL_TICKS);
 
+        // Llamar entity.load(...) repetidamente sobre una entidad ya viva causaba
+        // errores silenciosos en el parser de Display (visto en el log del usuario:
+        // "Display entityNot a string" cada segundo). En vez de "actualizar" el
+        // reloj, lo descartamos y creamos uno nuevo cada vez, igual que hacemos
+        // con las burbujas de texto del Pregonero (que si funcionan bien).
+        discardExistingClock(level, data);
+
         String clockText = formatClock(level.getDayTime() % 24000L);
-        boolean wasNew = !data.contains(TAG_CLOCK_UUID) || level.getEntity(data.getUUID(TAG_CLOCK_UUID)) == null;
-        Display.TextDisplay display = findOrCreateClockDisplay(level, jobSitePos, data, clockText);
-
-        if (wasNew) {
-            VillagersMod.LOGGER.info(
-                    "[villagers] [debug] Reloj del Campanero creado: pos=({}, {}, {}) uuid={} isAddedToLevel={}",
-                    jobSitePos.getX() + 0.5, jobSitePos.getY() + 1.6, jobSitePos.getZ() + 0.5,
-                    display.getUUID(), display.isAddedToLevel()
-            );
-        } else {
-            display.load(SpeechBubbles.buildDisplayTag(clockText, "white", false));
-        }
-    }
-
-    private static Display.TextDisplay findOrCreateClockDisplay(ServerLevel level, BlockPos jobSitePos, CompoundTag data, String initialText) {
-        if (data.contains(TAG_CLOCK_UUID)) {
-            UUID uuid = data.getUUID(TAG_CLOCK_UUID);
-            Entity existing = level.getEntity(uuid);
-            if (existing instanceof Display.TextDisplay display) {
-                return display;
-            }
-        }
-
         Display.TextDisplay display = new Display.TextDisplay(EntityType.TEXT_DISPLAY, level);
         display.moveTo(jobSitePos.getX() + 0.5, jobSitePos.getY() + 1.6, jobSitePos.getZ() + 0.5, 0.0F, 0.0F);
         display.setNoGravity(true);
         display.setSilent(true);
         display.setInvulnerable(true);
-        display.load(SpeechBubbles.buildDisplayTag(initialText, "white", false));
+        display.load(SpeechBubbles.buildDisplayTag(clockText, "white", false));
 
-        level.addFreshEntity(display);
+        boolean added = level.addFreshEntity(display);
         data.putUUID(TAG_CLOCK_UUID, display.getUUID());
-        return display;
+
+        VillagersMod.LOGGER.info(
+                "[villagers] [debug] Reloj del Campanero (re)creado: texto='{}' pos=({}, {}, {}) uuid={} added={}",
+                clockText, jobSitePos.getX() + 0.5, jobSitePos.getY() + 1.6, jobSitePos.getZ() + 0.5,
+                display.getUUID(), added
+        );
+    }
+
+    private static void discardExistingClock(ServerLevel level, CompoundTag data) {
+        if (!data.contains(TAG_CLOCK_UUID)) {
+            return;
+        }
+        Entity existing = level.getEntity(data.getUUID(TAG_CLOCK_UUID));
+        if (existing != null) {
+            existing.discard();
+        }
     }
 
     private static String formatClock(long dayTime) {

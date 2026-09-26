@@ -42,5 +42,11 @@ public class Config {
             .comment("Radio (en bloques) que cuenta el tablon de informacion como parte del asentamiento.")
             .defineInRange("infoBoardRadius", 100.0, 16.0, 512.0);
 
+    // --- Nombres de aldeanos ---
+    public static final ModConfigSpec.BooleanValue VILLAGER_NAMES_ENABLED = BUILDER
+            .comment("Si es true, cada aldeano recibe un nombre propio permanente. Apagado por defecto",
+                    "para evitar conflictos con otros mods que agregan la misma funcionalidad.")
+            .define("villagerNamesEnabled", false);
+
     public static final ModConfigSpec SPEC = BUILDER.build();
 }
