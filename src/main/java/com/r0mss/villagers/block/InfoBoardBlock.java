@@ -1,6 +1,7 @@
 package com.r0mss.villagers.block;
 
 import com.mojang.serialization.MapCodec;
+import com.r0mss.villagers.VillagersMod;
 import com.r0mss.villagers.network.InfoBoardNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -46,8 +47,15 @@ public class InfoBoardBlock extends BaseEntityBlock {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
+
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        VillagersMod.LOGGER.info(
+                "[villagers] [debug] Tablon clickeado en {} por {} | blockEntity={} esServerPlayer={}",
+                pos, player.getGameProfile().getName(), blockEntity, player instanceof ServerPlayer
+        );
+
         if (player instanceof ServerPlayer serverPlayer
-                && level.getBlockEntity(pos) instanceof InfoBoardBlockEntity board) {
+                && blockEntity instanceof InfoBoardBlockEntity board) {
             InfoBoardNetworking.openFor(serverPlayer, board, pos);
         }
         return InteractionResult.CONSUME;

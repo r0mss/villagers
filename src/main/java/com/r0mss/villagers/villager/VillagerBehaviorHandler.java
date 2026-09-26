@@ -89,6 +89,13 @@ public final class VillagerBehaviorHandler {
         CompoundTag data = villager.getPersistentData();
         logJobAcquiredOnce(villager, data, isGuardian ? "land_guardian" : "town_crier");
 
+        if (isCrier && isNightTime(villager)) {
+            // De noche soltamos por completo al Pregonero: nada de congelarlo, hacerlo
+            // volver a su puesto, ni gritar. Se comporta como cualquier aldeano normal
+            // (busca su cama y duerme) hasta que amanezca.
+            return;
+        }
+
         BlockPos jobSitePos = villager.getBrain().getMemory(MemoryModuleType.JOB_SITE)
                 .map(GlobalPos::pos)
                 .orElse(null);
@@ -113,6 +120,14 @@ public final class VillagerBehaviorHandler {
                 handleTownCrierShout(villager, data, villager.level().getGameTime());
             }
         }
+    }
+
+    /**
+     * De 6PM a 6AM (dayTime 12000-24000) consideramos que es de noche.
+     */
+    private static boolean isNightTime(Villager villager) {
+        long dayTime = villager.level().getDayTime() % 24000L;
+        return dayTime >= 12000L;
     }
 
     /**

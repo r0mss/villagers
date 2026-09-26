@@ -1,6 +1,7 @@
 package com.r0mss.villagers.network;
 
 import com.r0mss.villagers.Config;
+import com.r0mss.villagers.VillagersMod;
 import com.r0mss.villagers.block.InfoBoardBlockEntity;
 import com.r0mss.villagers.client.InfoBoardScreen;
 import net.minecraft.client.Minecraft;
@@ -83,26 +84,52 @@ public final class InfoBoardNetworking {
         }
 
         PacketDistributor.sendToPlayer(player, new OpenInfoBoardPacket(pos, board.getSettlementName(), lines));
+
+        VillagersMod.LOGGER.info(
+                "[villagers] [debug] Tablon abierto para {} en {} | nombreActual='{}' lineas={} totalAldeanos={}",
+                player.getGameProfile().getName(), pos, board.getSettlementName(), lines, total
+        );
     }
 
     private static void handleRename(RenameInfoBoardPacket packet, ServerPlayer player) {
         if (!(player.level() instanceof ServerLevel serverLevel)) {
+            VillagersMod.LOGGER.info("[villagers] [debug] Rename ignorado: el jugador no esta en un ServerLevel");
             return;
         }
-        if (player.distanceToSqr(Vec3.atCenterOf(packet.pos())) > RENAME_MAX_DISTANCE_SQ) {
+
+        double distSq = player.distanceToSqr(Vec3.atCenterOf(packet.pos()));
+        if (distSq > RENAME_MAX_DISTANCE_SQ) {
+            VillagersMod.LOGGER.info(
+                    "[villagers] [debug] Rename ignorado por distancia: jugador={} pos={} distSq={} limiteSq={}",
+                    player.getGameProfile().getName(), packet.pos(), distSq, RENAME_MAX_DISTANCE_SQ
+            );
             return;
         }
-        if (serverLevel.getBlockEntity(packet.pos()) instanceof InfoBoardBlockEntity board) {
-            // Limitamos el largo por las dudas, para que no se pueda mandar un nombre gigante
+
+        var blockEntity = serverLevel.getBlockEntity(packet.pos());
+        if (blockEntity instanceof InfoBoardBlockEntity board) {
             String name = packet.newName();
             if (name.length() > 48) {
                 name = name.substring(0, 48);
             }
             board.setSettlementName(name);
+            VillagersMod.LOGGER.info(
+                    "[villagers] [debug] Rename aplicado en {}: nuevoNombre='{}' confirmado='{}'",
+                    packet.pos(), name, board.getSettlementName()
+            );
+        } else {
+            VillagersMod.LOGGER.info(
+                    "[villagers] [debug] Rename ignorado: no hay InfoBoardBlockEntity en {} (encontrado: {})",
+                    packet.pos(), blockEntity
+            );
         }
     }
 
     private static void openScreenOnClient(OpenInfoBoardPacket packet) {
+        VillagersMod.LOGGER.info(
+                "[villagers] [debug] Cliente recibio OpenInfoBoardPacket: pos={} nombre='{}' lineas={}",
+                packet.pos(), packet.currentName(), packet.infoLines()
+        );
         Minecraft.getInstance().setScreen(new InfoBoardScreen(packet.pos(), packet.currentName(), packet.infoLines()));
     }
 

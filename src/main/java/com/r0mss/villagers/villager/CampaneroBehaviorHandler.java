@@ -1,5 +1,6 @@
 package com.r0mss.villagers.villager;
 
+import com.r0mss.villagers.VillagersMod;
 import com.r0mss.villagers.Config;
 import com.r0mss.villagers.registry.ModProfessions;
 import net.minecraft.core.BlockPos;
@@ -146,11 +147,22 @@ public final class CampaneroBehaviorHandler {
         }
         data.putLong(TAG_NEXT_CLOCK_UPDATE, time + CLOCK_UPDATE_INTERVAL_TICKS);
 
-        Display.TextDisplay display = findOrCreateClockDisplay(level, jobSitePos, data);
-        display.load(SpeechBubbles.buildDisplayTag(formatClock(level.getDayTime() % 24000L), "white", false));
+        String clockText = formatClock(level.getDayTime() % 24000L);
+        boolean wasNew = !data.contains(TAG_CLOCK_UUID) || level.getEntity(data.getUUID(TAG_CLOCK_UUID)) == null;
+        Display.TextDisplay display = findOrCreateClockDisplay(level, jobSitePos, data, clockText);
+
+        if (wasNew) {
+            VillagersMod.LOGGER.info(
+                    "[villagers] [debug] Reloj del Campanero creado: pos=({}, {}, {}) uuid={} isAddedToLevel={}",
+                    jobSitePos.getX() + 0.5, jobSitePos.getY() + 1.6, jobSitePos.getZ() + 0.5,
+                    display.getUUID(), display.isAddedToLevel()
+            );
+        } else {
+            display.load(SpeechBubbles.buildDisplayTag(clockText, "white", false));
+        }
     }
 
-    private static Display.TextDisplay findOrCreateClockDisplay(ServerLevel level, BlockPos jobSitePos, CompoundTag data) {
+    private static Display.TextDisplay findOrCreateClockDisplay(ServerLevel level, BlockPos jobSitePos, CompoundTag data, String initialText) {
         if (data.contains(TAG_CLOCK_UUID)) {
             UUID uuid = data.getUUID(TAG_CLOCK_UUID);
             Entity existing = level.getEntity(uuid);
@@ -164,6 +176,8 @@ public final class CampaneroBehaviorHandler {
         display.setNoGravity(true);
         display.setSilent(true);
         display.setInvulnerable(true);
+        display.load(SpeechBubbles.buildDisplayTag(initialText, "white", false));
+
         level.addFreshEntity(display);
         data.putUUID(TAG_CLOCK_UUID, display.getUUID());
         return display;

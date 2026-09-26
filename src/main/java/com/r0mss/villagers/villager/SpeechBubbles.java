@@ -1,5 +1,6 @@
 package com.r0mss.villagers.villager;
 
+import com.r0mss.villagers.VillagersMod;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -48,15 +49,23 @@ public final class SpeechBubbles {
 
     private static void spawnFloatingText(ServerLevel serverLevel, LivingEntity speaker, String message) {
         Display.TextDisplay display = new Display.TextDisplay(EntityType.TEXT_DISPLAY, serverLevel);
-        display.moveTo(speaker.getX(), speaker.getEyeY() + 0.55, speaker.getZ(), 0.0F, 0.0F);
+        double x = speaker.getX();
+        double y = speaker.getEyeY() + 0.55;
+        double z = speaker.getZ();
+        display.moveTo(x, y, z, 0.0F, 0.0F);
 
         display.setNoGravity(true);
         display.setSilent(true);
         display.setInvulnerable(true);
         display.load(buildDisplayTag(message, "gold", true));
 
-        serverLevel.addFreshEntity(display);
+        boolean added = serverLevel.addFreshEntity(display);
         display.getPersistentData().putLong(TAG_EXPIRE_TICK, serverLevel.getGameTime() + LIFESPAN_TICKS);
+
+        VillagersMod.LOGGER.info(
+                "[villagers] [debug] Burbuja de texto: hablante={} pos=({}, {}, {}) uuid={} addFreshEntity={} isAddedToLevel={}",
+                speaker.getUUID(), x, y, z, display.getUUID(), added, display.isAddedToLevel()
+        );
     }
 
     private static void broadcastToNearbyChat(ServerLevel serverLevel, LivingEntity speaker, String message,
